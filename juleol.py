@@ -115,7 +115,6 @@ def data_cleaning():
     df = get_data("Statistikk Juleøl.xlsx")
 
     required_columns = [
-        "Navn",
         "Bryggeri",
         "Type",
         "ABV",
@@ -133,7 +132,7 @@ def data_cleaning():
 
 def feature_engineering(df: pd.DataFrame, *, split: bool = True):
     # Prepare features
-    X = df[["Navn", "Bryggeri", "Type", "ABV", "Pris/L"]]
+    X = df[["Bryggeri", "Type", "ABV", "Pris/L"]]
     y = df["Score Total"]
 
     # One-hot encode beer type

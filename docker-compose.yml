@@ -1,0 +1,25 @@
+services:
+# Flask API Service
+  flask:
+    build: .
+    # Flask lytter nå internt på 5000
+    expose:
+      - 5000
+    # Kjører med 0.0.0.0 for å lytte på alle grensesnitt (nødvendig i Docker)
+    command: flask run --host=0.0.0.0
+
+  # Frontend Nginx Service
+  nginx:
+    image: nginx:stable-alpine
+    container_name: prediction_frontend
+    depends_on:
+      - flask # Sørger for at Flask starter før den prøver å kalle API-et
+    ports:
+      # Tilgang fra host-maskinen (http://localhost:8080)
+      - "8080:80"
+    volumes:
+      # Mapper frontend HTML-filen
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      # Mapper Nginx konfigurasjonen
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: always
