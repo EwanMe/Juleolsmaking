@@ -60,23 +60,26 @@ def google():
         print(f"An error occurred: {error}")
 
 
-def main():
-    sheets = pd.read_excel("stats.xlsx", sheet_name=None, index_col=None)
+def get_data(file: Path) -> pd.DataFrame:
+    sheets = pd.read_excel(file, sheet_name=None, index_col=None)
     for name, sheet in sheets.items():
         sheet["year"] = int(name)
 
-    df = pd.concat(sheets.values(), ignore_index=True)
+    return pd.concat(sheets.values(), ignore_index=True)
+
+
+def trend():
+    df = get_data("Statistikk Juleøl.xlsx")
 
     ax = plt.subplot()
     value_counts = df["Navn"].value_counts()
     names = value_counts[value_counts > 1].index.tolist()
     years = df["year"]
-    x = np.arange(int(years.min()) - 1, int(years.max()) + 1, 1)
+    x = np.arange(int(years.min()), int(years.max()) + 1, 1)
     for name in names:
         by_name = df.loc[df["Navn"] == name]
-        name_years = by_name["year"]
-        x = np.arange(int(name_years.min()), int(name_years.max()) + 1, 1)
-        ax.plot(x, by_name["Rating Total"], label=name)
+        name_years = by_name["year"].values
+        ax.plot(name_years, by_name["Score Total"].values, label=name)
     ax.set_xticks(x)
     ax.set_xlabel("År")
     ax.set_ylabel("Score")
@@ -84,6 +87,19 @@ def main():
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.show()
+
+
+def top():
+    df = get_data("Statistikk Juleøl.xlsx")
+
+    df = df.sort_values("Score Total", ascending=False)
+    df = df[["Navn", "Type", "ABV", "Score Total"]].head(10)
+    df.to_csv("out.csv")
+
+
+def main():
+    trend()
+    top()
 
 
 if __name__ == "__main__":
