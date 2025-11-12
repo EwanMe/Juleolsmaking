@@ -6,3 +6,4 @@ numpy
 openpyxl
 pandas
 PyQt5
+scikit-learn

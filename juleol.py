@@ -1,7 +1,6 @@
 import os.path
 from pathlib import Path
 
-
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -10,6 +9,10 @@ from googleapiclient.errors import HttpError
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
@@ -97,8 +100,55 @@ def top():
     df.to_csv("out.csv")
 
 
+def train():
+    # Load data
+    df = pd.read_excel("juleol_data.xlsx")
+
+    # Basic cleaning
+    df = df.dropna(subset=["Score Total"])  # Remove rows without scores
+
+    # Prepare features
+    X = df[["ABV", "Pris per liter", "Type"]]  # Add your features
+    y = df["Score Total"]
+
+    # One-hot encode beer type
+    encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+    type_encoded = encoder.fit_transform(X[["Type"]])
+    type_df = pd.DataFrame(
+        type_encoded, columns=encoder.get_feature_names_out(["Type"])
+    )
+
+    # Combine numeric features with encoded types
+    X_numeric = X[["ABV", "Pris per liter"]].reset_index(drop=True)
+    X_final = pd.concat([X_numeric, type_df], axis=1)
+
+    # Split data (80/20)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_final, y, test_size=0.2, random_state=42
+    )
+
+    # Train model
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+
+    # Evaluate
+    y_pred = model.predict(X_test)
+    mae = mean_absolute_error(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    print(f"MAE: {mae:.2f}")
+    print(f"RMSE: {rmse:.2f}")
+
+    # Feature importance
+    feature_importance = pd.DataFrame(
+        {"feature": X_final.columns, "importance": model.feature_importances_}
+    ).sort_values("importance", ascending=False)
+    print("\nTop features:")
+    print(feature_importance.head(10))
+
+
 def main():
-    trend()
+    # trend()
     top()
 
 
