@@ -78,12 +78,20 @@ def trend():
     value_counts = df["Navn"].value_counts()
     names = value_counts[value_counts > 1].index.tolist()
     years = df["year"]
-    x = np.arange(int(years.min()), int(years.max()) + 1, 1)
+    all_years = np.arange(int(years.min()), int(years.max()) + 1, 1)
+
     for name in names:
-        by_name = df.loc[df["Navn"] == name]
-        name_years = by_name["year"].values
-        ax.plot(name_years, by_name["Score Total"].values, label=name)
-    ax.set_xticks(x)
+        by_name = df.loc[df["Navn"] == name].sort_values("year")
+        actual_years = by_name["year"].values
+        actual_scores = by_name["Score Total"].values
+
+        # Plot line (interpolated)
+        ax.plot(actual_years, actual_scores, label=name, alpha=0.6, linewidth=2)
+
+        # Plot actual data points as markers
+        ax.scatter(actual_years, actual_scores, s=50, zorder=5)
+
+    ax.set_xticks(all_years)
     ax.set_xlabel("År")
     ax.set_ylabel("Score")
     ax.set_title("Juleøl")
@@ -96,7 +104,7 @@ def top():
     df = get_data("Statistikk Juleøl.xlsx")
 
     df = df.sort_values("Score Total", ascending=False)
-    df = df[["Navn", "Type", "ABV", "Score Total"]].head(10)
+    df = df[["Navn", "Type", "ABV", "year", "Score Total"]].head(10)
     df.to_csv("out.csv")
 
 
@@ -147,8 +155,15 @@ def train():
     print(feature_importance.head(10))
 
 
+def data_cleaning():
+    df = get_data("Statistikk Juleøl.xlsx")
+
+    # Remove rows without scores
+    df = df.dropna(subset=["Score Total"])
+
+
 def main():
-    # trend()
+    trend()
     top()
 
 
