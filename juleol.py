@@ -13,6 +13,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.linear_model import Ridge
+
+import joblib
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
@@ -108,63 +111,131 @@ def top():
     df.to_csv("out.csv")
 
 
-def train():
-    # Load data
-    df = pd.read_excel("juleol_data.xlsx")
+def data_cleaning():
+    df = get_data("Statistikk Juleøl.xlsx")
 
-    # Basic cleaning
-    df = df.dropna(subset=["Score Total"])  # Remove rows without scores
+    required_columns = [
+        "Navn",
+        "Bryggeri",
+        "Type",
+        "ABV",
+        "Volum (L)",
+        "Pris (kr)",
+        "Score Total",
+    ]
 
+    df = df.dropna(subset=required_columns)
+
+    df["Pris/L"] = df["Pris (kr)"] / df["Volum (L)"]
+
+    return df
+
+
+def feature_engineering(df: pd.DataFrame, *, split: bool = True):
     # Prepare features
-    X = df[["ABV", "Pris per liter", "Type"]]  # Add your features
+    X = df[["Navn", "Bryggeri", "Type", "ABV", "Pris/L"]]
     y = df["Score Total"]
 
     # One-hot encode beer type
     encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-    type_encoded = encoder.fit_transform(X[["Type"]])
+    type_encoded = encoder.fit_transform(X[["Bryggeri", "Type"]])
     type_df = pd.DataFrame(
-        type_encoded, columns=encoder.get_feature_names_out(["Type"])
+        type_encoded,
+        columns=encoder.get_feature_names_out(["Bryggeri", "Type"]),
     )
+    joblib.dump(encoder, "encoder.pkl")
 
     # Combine numeric features with encoded types
-    X_numeric = X[["ABV", "Pris per liter"]].reset_index(drop=True)
+    X_numeric = X[["ABV", "Pris/L"]].reset_index(drop=True)
     X_final = pd.concat([X_numeric, type_df], axis=1)
+
+    if not split:
+        print("No training split")
+        return X_final, y
 
     # Split data (80/20)
     X_train, X_test, y_train, y_test = train_test_split(
         X_final, y, test_size=0.2, random_state=42
     )
+    return X_train, X_test, y_train, y_test, X_final
 
-    # Train model
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
+
+def train_random_forest(X_train, X_test, y_train, y_test, X_final):
+    model = RandomForestRegressor(
+        n_estimators=50, max_depth=5, min_samples_split=5, random_state=42
+    )
     model.fit(X_train, y_train)
 
-    # Evaluate
     y_pred = model.predict(X_test)
     mae = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 
+    print("Random Forest")
     print(f"MAE: {mae:.2f}")
     print(f"RMSE: {rmse:.2f}")
 
-    # Feature importance
     feature_importance = pd.DataFrame(
         {"feature": X_final.columns, "importance": model.feature_importances_}
     ).sort_values("importance", ascending=False)
     print("\nTop features:")
+    print(feature_importance)
+
+    joblib.dump(model, "beer_model_random_forest.pkl")
+
+
+def train_and_test_linear_regressor(X_train, X_test, y_train, y_test, X_final):
+    model = Ridge(alpha=10.0)
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+    mae = mean_absolute_error(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    print("Linear regressor")
+    print(f"MAE: {mae:.2f}")
+    print(f"RMSE: {rmse:.2f}")
+
+    feature_importance = pd.DataFrame(
+        {
+            "feature": X_final.columns,
+            "coefficient": model.coef_,
+            "abs_coefficient": abs(model.coef_),
+        }
+    ).sort_values("abs_coefficient", ascending=False)
+
+    print("\nTop features:")
+    print(feature_importance)
+
+    joblib.dump(model, "beer_linear_regressor.pkl")
+
+
+def train_final_ridge_model(X_final, y):
+    model = Ridge(alpha=10.0)
+    model.fit(X_final, y)
+    joblib.dump(model, "beer_linear_regressor.pkl")
+
+    feature_importance = pd.DataFrame(
+        {
+            "feature": X_final.columns,
+            "coefficient": model.coef_,
+            "abs_coefficient": abs(model.coef_),
+        }
+    ).sort_values("abs_coefficient", ascending=False)
+    print("\Coefficients for Final Model:")
     print(feature_importance.head(10))
 
 
-def data_cleaning():
-    df = get_data("Statistikk Juleøl.xlsx")
-
-    # Remove rows without scores
-    df = df.dropna(subset=["Score Total"])
-
-
 def main():
-    trend()
-    top()
+    # trend()
+    # top()
+    df = data_cleaning()
+    # X_train, X_test, y_train, y_test, X_final = feature_engineering(df)
+
+    # train_random_forest(X_train, X_test, y_train, y_test, X_final)
+    # train_and_test_linear_regressor(X_train, X_test, y_train, y_test, X_final)
+
+    X_final, y = feature_engineering(df, split=False)
+    train_final_ridge_model(X_final, y)
 
 
 if __name__ == "__main__":
