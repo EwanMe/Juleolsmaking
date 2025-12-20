@@ -6,7 +6,7 @@ export default function BeerScorePredictor() {
     type: 'Bokkøl',
     abv: 0.09,
     volum_l: 0.33,
-    pris_kr: 47.8
+    pris_kr: 47.8,
   });
 
   const [prediction, setPrediction] = useState(null);
@@ -15,9 +15,11 @@ export default function BeerScorePredictor() {
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [id]: ['abv', 'volum_l', 'pris_kr'].includes(id) ? parseFloat(value) : value
+      [id]: ['abv', 'volum_l', 'pris_kr'].includes(id)
+        ? parseFloat(value)
+        : value,
     }));
   };
 
@@ -27,7 +29,7 @@ export default function BeerScorePredictor() {
     setLoading(true);
 
     try {
-      const response = await fetch('/predict', {
+      const response = await fetch('/api/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,11 +43,11 @@ export default function BeerScorePredictor() {
         setPrediction(result.predicted_score_total);
       } else {
         setError(`API-feil: ${result.error || 'Ukjent feil'}`);
-        console.error("API Error Response:", result);
+        console.error('API Error Response:', result);
       }
     } catch (e) {
       setError('Nettverksfeil. Sjekk at Flask-API er operativt.');
-      console.error("Fetch Error:", e);
+      console.error('Fetch Error:', e);
     } finally {
       setLoading(false);
     }
@@ -98,7 +100,9 @@ export default function BeerScorePredictor() {
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Volum (L)</span>
+              <span className="text-sm font-medium text-gray-700">
+                Volum (L)
+              </span>
               <input
                 type="number"
                 id="volum_l"
@@ -110,7 +114,9 @@ export default function BeerScorePredictor() {
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Pris (kr)</span>
+              <span className="text-sm font-medium text-gray-700">
+                Pris (kr)
+              </span>
               <input
                 type="number"
                 id="pris_kr"
@@ -133,22 +139,20 @@ export default function BeerScorePredictor() {
 
         {prediction !== null && (
           <div className="mt-8 p-6 border-l-4 border-yellow-400 bg-yellow-50 rounded-lg shadow-inner">
-            <p className="text-lg font-semibold text-gray-800">Predikert Total Score:</p>
-            <p className="text-4xl font-extrabold text-yellow-500 mt-1">{prediction}</p>
+            <p className="text-lg font-semibold text-gray-800">
+              Predikert Total Score:
+            </p>
+            <p className="text-4xl font-extrabold text-yellow-500 mt-1">
+              {prediction}
+            </p>
           </div>
         )}
 
         {loading && (
-          <div className="mt-4 text-center text-gray-500">
-            Laster...
-          </div>
+          <div className="mt-4 text-center text-gray-500">Laster...</div>
         )}
 
-        {error && (
-          <div className="mt-4 text-center text-red-600">
-            {error}
-          </div>
-        )}
+        {error && <div className="mt-4 text-center text-red-600">{error}</div>}
       </div>
     </div>
   );

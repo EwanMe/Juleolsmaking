@@ -1,19 +1,13 @@
 services:
-  flask:
-    build: .
-    expose:
-      - 5000
+  backend:
+    build: ./backend
+    container_name: backend
     command: flask run --host=0.0.0.0
 
   frontend:
-    image: nginx:stable-alpine
+    build: ./frontend
     container_name: frontend
-    build:
-      context: frontend
     depends_on:
-      - flask
+      - backend
     ports:
-      - "8080:80"
-    environment:
-      - DEBUG=False
-    restart: always
+      - '8080:80'
