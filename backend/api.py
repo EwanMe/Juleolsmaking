@@ -61,7 +61,7 @@ def prepare_features(input_data: dict) -> pd.DataFrame:
 app = Flask(__name__)
 
 
-@app.route("/predict", methods=["POST"])
+@app.route("/api/predict", methods=["POST"])
 def predict():
     if not MODEL:
         return (

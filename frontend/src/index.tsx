@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import BeerScorePredictor from './App';
+import './index.css';
 
 const container = document.getElementById('root');
 if (!container) {
