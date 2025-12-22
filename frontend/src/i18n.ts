@@ -25,7 +25,7 @@ export type Language = 'en' | 'no' | 'nn';
 
 export const translations: Record<Language, Translations> = {
   en: {
-    title: 'Christmas Beer Score Predictor 🍺',
+    title: 'Xmas Beer Score Predictor 🍺',
     description: 'Estimate the score based on key factors.',
     brewery: 'Brewery',
     type: 'Type',

@@ -1,8 +1,0 @@
-FROM python:slim
-
-COPY server-requirements.txt server-requirements.txt
-RUN pip install -r server-requirements.txt
-
-COPY . /app
-ENV FLASK_APP=/app/api.py
-EXPOSE 5000
