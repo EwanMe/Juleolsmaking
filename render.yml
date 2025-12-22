@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: beer-predictor
+    env: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.14.0
