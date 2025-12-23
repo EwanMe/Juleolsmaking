@@ -1,6 +1,8 @@
 import React, { useState, ChangeEvent } from 'react';
 import { useTranslations } from './useTranslations';
 import { BEER_TYPES, BeerType } from './beerTypes';
+import { BREWERIES } from './breweries';
+import AutocompleteInput from './AutocompleteInput';
 
 interface FormInputProps {
   label: string;
@@ -153,11 +155,13 @@ export default function BeerScorePredictor() {
         <p className="text-center text-gray-600 mb-8">{t.description}</p>
 
         <div className="space-y-4">
-          <FormInput
+          <AutocompleteInput
             label={t.brewery}
-            id="bryggeri"
             value={formData.bryggeri}
-            onChange={handleChange}
+            onChange={(value) =>
+              setFormData((prev) => ({ ...prev, bryggeri: value }))
+            }
+            suggestions={BREWERIES}
           />
 
           <label className="block">
@@ -172,8 +176,7 @@ export default function BeerScorePredictor() {
                 }))
               }
               className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border
-              bg-white appearance-none
-              focus:border-yellow-400 focus:ring focus:ring-yellow-400
+              bg-white focus:border-yellow-400 focus:ring focus:ring-yellow-400
               focus:ring-opacity-50"
             >
               {BEER_TYPES.map((beerType) => (
@@ -188,7 +191,7 @@ export default function BeerScorePredictor() {
             <FormInput
               label={t.abv}
               id="abv"
-              type="text"
+              type="number"
               value={formData.abv}
               onChange={handleChange}
               error={errors.abv}
@@ -196,7 +199,7 @@ export default function BeerScorePredictor() {
             <FormInput
               label={t.volume}
               id="volum_l"
-              type="text"
+              type="number"
               value={formData.volum_l}
               onChange={handleChange}
               error={errors.volum_l}
@@ -204,7 +207,7 @@ export default function BeerScorePredictor() {
             <FormInput
               label={t.price}
               id="pris_kr"
-              type="text"
+              type="number"
               value={formData.pris_kr}
               onChange={handleChange}
               error={errors.pris_kr}
