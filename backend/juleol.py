@@ -111,6 +111,18 @@ def top():
     df.to_csv("out.csv")
 
 
+def get_all_types():
+    df = get_data("Statistikk Juleøl.xlsx")
+    types = pd.unique(df["Type"])
+    print(types.tolist())
+
+
+def get_all_breweries():
+    df = get_data("Statistikk Juleøl.xlsx")
+    breweries = pd.unique(df["Bryggeri"])
+    print(breweries.tolist())
+
+
 def data_cleaning():
     df = get_data("Statistikk Juleøl.xlsx")
 
@@ -133,6 +145,8 @@ def data_cleaning():
 def feature_engineering(df: pd.DataFrame, *, split: bool = True):
     # Prepare features
     X = df[["Bryggeri", "Type", "ABV", "Pris/L"]]
+    X["Bryggeri"] = X["Bryggeri"].str.strip().str.lower()
+    X["Type"] = X["Type"].str.strip().str.lower()
     y = df["Score Total"]
 
     # One-hot encode beer type

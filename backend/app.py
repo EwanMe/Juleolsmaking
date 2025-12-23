@@ -40,8 +40,8 @@ def predict():
         df_raw = pd.DataFrame(
             [
                 {
-                    "Bryggeri": data["bryggeri"],
-                    "Type": data["type"],
+                    "Bryggeri": data["bryggeri"].strip().lower(),
+                    "Type": data["type"].strip().lower(),
                     "ABV": data["abv"],
                     "Pris/L": data["pris_kr"] / data["volum_l"],
                 }
