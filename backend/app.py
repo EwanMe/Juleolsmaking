@@ -3,8 +3,10 @@ from flask import Flask, send_from_directory, request, jsonify
 import pandas as pd
 import joblib
 
-MODEL_PATH = os.getenv("MODEL_PATH", "/app/beer_linear_regressor.pkl")
-ENCODER_PATH = os.getenv("ENCODER_PATH", "/app/encoder.pkl")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+MODEL_PATH = os.path.join(BASE_DIR, "beer_linear_regressor.pkl")
+ENCODER_PATH = os.path.join(BASE_DIR, "encoder.pkl")
 
 MODEL = joblib.load(MODEL_PATH)
 ENCODER = joblib.load(ENCODER_PATH)

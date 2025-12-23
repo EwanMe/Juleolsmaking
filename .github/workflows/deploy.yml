@@ -1,7 +1,9 @@
-name: Deploy to Render
+name: Deploy to PythonAnywhere
 
 on:
   push:
+    branches: [master]
+  pull_request:
     branches: [master]
 
 jobs:
@@ -10,8 +12,55 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Trigger Render Deploy
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build React frontend
         run: |
-          curl -X POST $RENDER_DEPLOY_HOOK
+          cd frontend
+          npm ci --legacy-peer-deps
+          npm run build
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan ssh.pythonanywhere.com >> ~/.ssh/known_hosts
+
+      - name: Deploy backend
+        env:
+          PA_USER: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            backend/ ${PA_USER}@ssh.pythonanywhere.com:~/beer-predictor/
+
+      - name: Deploy React build
+        env:
+          PA_USER: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+        run: |
+          rsync -avz --delete \
+            frontend/build/ ${PA_USER}@ssh.pythonanywhere.com:~/beer-predictor/build/
+
+      - name: Install dependencies
+        env:
+          PA_USER: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+        run: |
+          ssh ${PA_USER}@ssh.pythonanywhere.com \
+            "cd ~/beer-predictor && pip3.10 install --user -r server-requirements.txt"
+
+      - name: Reload web app
+        env:
+          PA_USER: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          PA_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+        run: |
+          curl -X POST \
+            "https://www.pythonanywhere.com/api/v0/user/${PA_USER}/webapps/${PA_USER}.pythonanywhere.com/reload/" \
+            -H "Authorization: Token ${PA_TOKEN}"
